@@ -41,7 +41,7 @@ def create_tables():
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS pollutants(
     pollutant_id      SERIAL PRIMARY KEY,
-    pollutant_name    VARCHAR,
+    pollutant_name    VARCHAR UNIQUE NOT NULL,
     unit              VARCHAR,
     safe_limit        NUMERIC,
     category          VARCHAR
@@ -50,7 +50,7 @@ def create_tables():
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS weather_conditions(
     weather_condition_id            SERIAL PRIMARY KEY,
-    condition                       VARCHAR,
+    condition                       VARCHAR UNIQUE NOT NULL,
     severity_level                  VARCHAR
     );   
     """)
