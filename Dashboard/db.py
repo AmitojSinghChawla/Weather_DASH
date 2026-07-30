@@ -13,6 +13,15 @@ def get_connected():
     config["sslmode"] = "require"
     return psycopg2.connect(**config)
 
+def get_or_create_time_id(cursor, ts):
+    cursor.execute("SELECT time_id FROM time WHERE timestamp = %s", (ts,))
+    row = cursor.fetchone()
+    if row:
+        return row[0]
+    cursor.execute("""
+        INSERT INTO time (timestamp) VALUES (%s) RETURNING time_id
+    """, (ts,))
+    return cursor.fetchone()[0]
 
 def create_tables():
     conn = get_connected()
