@@ -17,8 +17,8 @@ CITIES = [
     {"city": "Mumbai", "country": "IN", "lat": 19.08, "lon": 72.88},
 ]
 
-history_api = "https://historical-forecast-api.open-meteo.com/v1/forecast"
-current_api = "https://api.open-meteo.com/v1/forecast"
+weather_api = "https://api.openweathermap.org/data/2.5/weather"
+pollution_api = "http://api.openweathermap.org/data/2.5/air_pollution"
 
 BACKFILL_MONTHS = 3
 
