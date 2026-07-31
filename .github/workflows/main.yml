@@ -1,0 +1,36 @@
+on:
+  schedule:
+    - cron: '*/15 * * * *' 
+  workflow_dispatch:
+
+jobs:
+  automation-job:
+    runs-on: ubuntu-latest
+    permissions: 
+      contents: write
+    env:
+      DB_NAME: ${{ secrets.DB_NAME }}
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      DB_HOST: ${{ secrets.DB_HOST }}
+      DB_PORT: ${{ secrets.DB_PORT }}
+      WEATHER_API_KEY: ${{ secrets.WEATHER_API_KEY }}
+      
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Fetch prices
+        run: python Dashboard/fetch_rawactuals.py
+
+
+      
