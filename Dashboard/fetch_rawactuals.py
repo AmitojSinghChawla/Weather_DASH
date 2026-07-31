@@ -46,7 +46,7 @@ def get_actuals():
         aqi_value = data2['list'][0]['main']['aqi']
         components = data2['list'][0]['components']
 
-        cursor.execute("SELECT condition_id FROM weather_conditions WHERE weather_condition_id LIKE '%s' ; ",(condition,))
+        cursor.execute("SELECT weather_condition_id FROM weather_conditions WHERE condition = %s", (condition,))
         condition_id = cursor.fetchone()
 
         pollutant_values = {
@@ -58,13 +58,13 @@ def get_actuals():
                 "O3": components["o3"] }
 
         for pollutant_name, concentration in pollutant_values.items(): # To loop through a dictionary we need .items()
-            cursor.execute("SELECT pollution_id FROM pollutants WHERE pollutant_name LIKE '%s' ; ",pollutant_name)
+            cursor.execute("SELECT pollutant_id FROM pollutants WHERE pollutant_name = %s", (pollutant_name,))
             pollutant_id = cursor.fetchone()
 
             cursor.execute("""
                             INSERT INTO fact_weather_readings(
-                            location_id,time_id,pollutant_id,condition_id,temperature,feels_like,humidity,wind_speed,pressure,visibility,aqi_value,concentration) 
-                            VALUES ( %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING ; """ ,
+                            location_id,time_id,pollutant_id,condition_id,temperature,feels_like,humidity,wind_speed,pressure,visibility,aqi_value,pollutant_concentration,fetched_at) 
+                            VALUES ( %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s, NOW()) ON CONFLICT DO NOTHING ; """ ,
                             (location_id, time_id, pollutant_id, condition_id,temperature, feels_like, humidity, wind_speed,pressure, visibility, aqi_value, concentration))
 
     conn.commit()

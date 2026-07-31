@@ -13,6 +13,8 @@ def get_connected():
     config["sslmode"] = "require"
     return psycopg2.connect(**config)
 
+#***************************************************************
+
 def get_or_create_time_id(cursor, ts):
     cursor.execute("SELECT time_id FROM time WHERE timestamp = %s", (ts,))
     row = cursor.fetchone()
@@ -75,8 +77,8 @@ def create_tables():
     feels_like                      NUMERIC(5,2),
     humidity                        NUMERIC(5,2),
     wind_speed                      NUMERIC(5,2),
-    pressure                        NUMERIC(5,2),
-    visibility                      NUMERIC(5,2) ,  
+    pressure                        NUMERIC(7,2),
+    visibility                      INTEGER ,  
     aqi_value                       INTEGER,
     pollutant_concentration         NUMERIC(5,2) ,
     fetched_at                      TIMESTAMPTZ ,
