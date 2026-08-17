@@ -5,12 +5,12 @@ Real-time weather and air quality monitoring dashboard tracking 5 Indian metros.
 ## Dashboard Preview
 
 ### Page 1 - Live Overview
-![Page 1](screenshots/page1.png)
+![Page 1](page1.png)
 
 Select a city to see its current temperature, feels like, humidity, pressure, wind speed, AQI level, pollutant concentrations against safe limits, weather condition, and map location. The bottom section compares all cities independent of the selected filter.
 
 ### Page 2 - Pollution Deep Dive
-![Page 2](screenshots/page2.png)
+![Page 2](page2.png)
 
 Filter by pollutant and city to explore concentration trends over time, safe limit violations, pollution by weather condition, time of day analysis, wind speed correlation, and city pollution rankings.
 
