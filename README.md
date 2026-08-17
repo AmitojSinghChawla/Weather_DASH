@@ -1,8 +1,18 @@
 # India Weather & Air Quality Dashboard
 
-Real-time weather and air quality monitoring dashboard tracking 5 Indian metros — Delhi, Mumbai, Bangalore, Kolkata, and Chennai.
+Real-time weather and air quality monitoring dashboard tracking 5 Indian metros. An automated pipeline collects data every 15 minutes, stores it in a cloud database, and feeds a live Power BI dashboard.
 
-Built as an end-to-end data engineering + BI project: API ingestion → Cloud PostgreSQL → Automated pipeline → Power BI Dashboard.
+## Dashboard Preview
+
+### Page 1 - Live Overview
+![Page 1](screenshots/page1.png)
+
+Select a city to see its current temperature, feels like, humidity, pressure, wind speed, AQI level, pollutant concentrations against safe limits, weather condition, and map location. The bottom section compares all cities independent of the selected filter.
+
+### Page 2 - Pollution Deep Dive
+![Page 2](screenshots/page2.png)
+
+Filter by pollutant and city to explore concentration trends over time, safe limit violations, pollution by weather condition, time of day analysis, wind speed correlation, and city pollution rankings.
 
 ## Architecture
 
@@ -13,85 +23,79 @@ OpenWeatherMap APIs
             │
             ▼
     Python Ingestion Script
-    (runs every 15 min via GitHub Actions)
+    (automated via GitHub Actions)
             │
             ▼
     PostgreSQL on Neon (Cloud)
     Star Schema: 4 dimension + 1 fact table
             │
             ▼
-    Power BI Dashboard (Import Mode)
-    3 pages — Overview, Pollution Deep Dive, Trends
+    Power BI Dashboard (DirectQuery)
+    2 pages: Live Overview + Pollution Deep Dive
 ```
 
-## Data Model — Star Schema
+## Data Model - Star Schema
 
-| Table | Type | Description |
-|-------|------|-------------|
-| `locations` | Dimension | 5 Indian metros with coordinates |
+| Table | Type | Purpose |
+|-------|------|---------|
+| `locations` | Dimension | 5 Indian metros with lat/lon coordinates |
 | `time` | Dimension | Auto-populated timestamps per ingestion run |
 | `pollutants` | Dimension | PM2.5, PM10, NO2, SO2, CO, O3 with safe limits |
-| `weather_conditions` | Dimension | Clear, Haze, Rain, Clouds etc. with severity |
-| `fact_weather_readings` | Fact | All readings — temp, humidity, wind, pressure, AQI, pollutant concentrations |
+| `weather_conditions` | Dimension | Clear, Haze, Rain, Clouds etc. with severity levels |
+| `fact_weather_readings` | Fact | Temperature, humidity, wind, pressure, AQI, pollutant concentrations |
+| `latest_readings` | View | Pre-computed latest reading per city per pollutant for fast Page 1 queries |
 
-Each ingestion run produces 30 rows (5 cities × 6 pollutants), approximately 2,880 rows/day.
+Each run produces 30 rows (5 cities x 6 pollutants). Approximately 2,880 rows per day.
 
-## Dashboard Pages
+## Key Findings (from 18 days of data)
 
-**Page 1 — Live Overview**
-- KPI cards: temperature, feels like, humidity, pressure, wind speed, AQI (filtered by city slicer)
-- Pollutant concentration vs safe limit comparison
-- Current weather condition with icon
-- City location map
-- All-cities temperature ranking and summary table
-
-**Page 2 — Pollution Deep Dive**
-- Pollutant concentration trends over time by city
-- Safe limit violation count by pollutant
-- Pollution levels by weather condition (donut chart)
-- Pollution by time of day — morning, afternoon, night (treemap)
-- Wind speed vs pollution correlation (scatter plot)
-- City ranking by average pollution
-
-## Key Findings
-
-- **PM2.5 is the primary concern** — highest violation count across all cities
-- **Delhi consistently leads** in pollution levels, especially PM2.5 and PM10
-- **Rain reduces pollution** — concentration drops during rainy conditions
-- **Higher wind speed correlates with lower pollution** — visible downward trend in scatter plot
-- **Night pollution is lower** than morning and afternoon, likely due to reduced traffic
+- **PM2.5 is the most dangerous pollutant** across Indian metros, with over 1000 safe limit violations during the collection period
+- **Delhi leads in pollution** consistently, especially in PM2.5 and PM10 concentrations
+- **Rain reduces pollution significantly**: average concentration during rain is 46.64 compared to 87.59 during clear weather
+- **Night pollution is slightly higher** (54.61) than morning (50.48) and afternoon (50.39)
+- **Higher wind speed correlates with lower pollution**, visible as a downward trend in the scatter plot
+- **Mumbai and Bangalore are the cleanest cities** in the dataset with the lowest average concentrations
 
 ## Tech Stack
 
-- **Python** — API calls, data ingestion, DB operations
-- **PostgreSQL (Neon)** — Cloud database with star schema
-- **psycopg2** — Python-PostgreSQL connector
-- **GitHub Actions** — Automated ingestion every 15 minutes
-- **Power BI** — Dashboard with DAX measures and interactive slicers
-- **OpenWeatherMap API** — Weather and air pollution data source
+| Component | Technology |
+|-----------|-----------|
+| Data Ingestion | Python, requests |
+| Database | PostgreSQL on Neon (cloud) |
+| DB Connector | psycopg2 |
+| Automation | GitHub Actions (scheduled workflow) |
+| Visualization | Power BI Desktop (DAX, DirectQuery) |
+| Data Source | OpenWeatherMap Weather + Air Pollution APIs |
+| Version Control | Git, GitHub |
 
 ## Project Structure
 
 ```
 Weather_DASH/
 ├── Dashboard/
-│   ├── config.py            # DB config and API endpoints
-│   ├── db.py                # Database connection and table creation
-│   ├── seed.py              # Seed dimension tables with initial data
-│   ├── fetch_rawactuals.py  # Main ingestion script
-│   └── db_helpers.py        # FK lookup helper functions
+│   ├── config.py              # DB config and API endpoints
+│   ├── db.py                  # Database connection and table creation
+│   ├── seed.py                # Seed dimension tables with initial data
+│   ├── fetch_rawactuals.py    # Main ingestion script
+│   └── db_helpers.py          # FK lookup helper functions
+├── screenshots/
+│   ├── page1.png
+│   └── page2.png
+├── Weather_Dashboard.pdf      # Dashboard export
+├── Weather_Dashboard.pbix     # Power BI file
 ├── requirements.txt
 ├── .github/
 │   └── workflows/
-│       └── fetch_data.yml   # GitHub Actions automation
+│       └── fetch_data.yml     # GitHub Actions automation
 └── README.md
 ```
 
-## Setup
+## Setup Instructions
 
-1. Clone the repo
-2. Create a Neon PostgreSQL database
-3. Add credentials to `.env`:
+1. Clone the repository
+2. Create a free PostgreSQL database on [Neon](https://neon.tech)
+3. Sign up for a free API key at [OpenWeatherMap](https://openweathermap.org)
+4. Create a `.env` file in the project root:
    ```
    WEATHER_API_KEY=your_openweathermap_key
    DB_HOST=your_neon_host
@@ -99,19 +103,30 @@ Weather_DASH/
    DB_USER=neondb_owner
    DB_PASSWORD=your_password
    ```
-4. Run `python db.py` to create tables
-5. Run `python seed.py` to populate dimension tables
-6. Run `python fetch_rawactuals.py` to start collecting data
-7. Connect Power BI to your Neon database via PostgreSQL connector
+5. Install dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
+6. Create tables and seed dimension data:
+   ```
+   python Dashboard/db.py
+   python Dashboard/seed.py
+   ```
+7. Run the ingestion script manually to verify:
+   ```
+   python Dashboard/fetch_rawactuals.py
+   ```
+8. Connect Power BI Desktop to your Neon database using the PostgreSQL connector
 
 ## Automation
 
-GitHub Actions runs the ingestion script every 15 minutes. Secrets are stored in the repository settings. The workflow installs dependencies, sets environment variables, and executes the script.
+GitHub Actions runs the ingestion script on a scheduled interval. Secrets (API key, database credentials) are stored in the repository settings under Actions secrets. The workflow installs dependencies, sets environment variables, and executes the ingestion script.
 
 ## Future Improvements
 
-- Add more cities or international locations
 - Calculate Indian AQI (0-500 scale) from raw pollutant concentrations
-- Deploy on AWS Lambda with CloudWatch triggers
-- Add ESP32 sensor for ground-truth comparison
-- Add a third dashboard page for historical trends and forecasting
+- Add more cities or international locations
+- Deploy ingestion on AWS Lambda with CloudWatch triggers
+- Add ESP32 hardware sensor for ground-truth comparison
+- Build a third page for predictive forecasting using ML models
+- Implement alerting when pollutants cross safe limits
